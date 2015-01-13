@@ -6,6 +6,7 @@ module ldiv #
    )
    (
     input 			    clk,
+    input 			    resetb,
     input [NUMERATOR_WIDTH - 1:0]   numerator_in,
     input [DENOMINATOR_WIDTH - 1:0] denominator_in,
     input 			    valid_in,
@@ -35,31 +36,40 @@ module ldiv #
 	begin
 	   assign r_next[i] = i > 0 ? (remainder[i - 1] << 1) | numerator[i - 1][LATENCY - i - 1] : 0;
 
-	   always @(posedge clk)
-	     if (i == 0)
+	   always @(posedge clk or negedge resetb)
+	     if (~resetb)
 	       begin
 		  quotient[i] <= 0;
 		  remainder[i] <= 0;
-		  denominator[i] <= denominator_in;
-		  numerator[i] <= numerator_in;
-		  valid[i] <= valid_in;
+		  denominator[i] <= 0;
+		  numerator[i] <= 0;
+		  valid[i] <= 0;
 	       end
 	     else
-	       begin
-		  if (r_next[i] >= denominator[i - 1])
-		    begin
-		       remainder[i] <= r_next[i] - denominator[i - 1];
-		       quotient[i] <= quotient[i - 1] | (1 << LATENCY - i - 1);
-		    end
-		  else
-		    begin
-		       remainder[i] <= r_next[i];
-		       quotient[i] <= quotient[i - 1];
-		    end
-		  denominator[i] <= denominator[i - 1];
-		  numerator[i] <= numerator[i - 1];
-		  valid[i] <= valid[i - 1];
-	       end
+	       if (i == 0)
+		 begin
+		    quotient[i] <= 0;
+		    remainder[i] <= 0;
+		    denominator[i] <= denominator_in;
+		    numerator[i] <= numerator_in;
+		    valid[i] <= valid_in;
+		 end
+	       else
+		 begin
+		    if (r_next[i] >= denominator[i - 1])
+		      begin
+			 remainder[i] <= r_next[i] - denominator[i - 1];
+			 quotient[i] <= quotient[i - 1] | (1 << LATENCY - i - 1);
+		      end
+		    else
+		      begin
+			 remainder[i] <= r_next[i];
+			 quotient[i] <= quotient[i - 1];
+		      end
+		    denominator[i] <= denominator[i - 1];
+		    numerator[i] <= numerator[i - 1];
+		    valid[i] <= valid[i - 1];
+		 end
 	end
    endgenerate
 
@@ -96,6 +106,7 @@ module main ();
    ldiv
      (
       .clk(clk),
+      .resetb(~reset),
       .numerator_in(numerator),
       .denominator_in(denominator),
       .valid_in(valid_in),
@@ -116,7 +127,7 @@ module main ();
 	  end
 	$display("Done.");
 	$finish;
-     end // initial begin
+     end
 
    always @(posedge clk)
      if (reset)
