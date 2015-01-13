@@ -13,4 +13,4 @@ $ sudo apt-get install gtkwave
 $ git clone https://github.com/staceycampbell/ldiv.git
 $ cd ldiv
 $ make
-$ gtkwave idiv.vcd
+$ gtkwave ldiv.vcd
