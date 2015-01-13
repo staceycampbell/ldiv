@@ -1,6 +1,8 @@
 This is a small chunk of code to demonstrate synthesizable Verilog to
 perform continuous long division.
 
+https://en.wikipedia.org/wiki/Division_algorithm#Integer_division_.28unsigned.29_with_remainder
+
 The primary purpose of this code is to demonstrate (to myself!) the
 usefulness of Icarus Verilog.
 
