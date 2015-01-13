@@ -1,0 +1,16 @@
+This is a small chunk of code to demonstrate synthesizable Verilog to
+perform continuous long division.
+
+The primary purpose of this code is to demonstrate (to myself!) the
+usefulness of Icarus Verilog.
+
+http://iverilog.wikia.com/wiki/Main_Page
+
+This demo will run just fine on a Raspberry Pi running raspbian.  E.g.
+
+$ sudo apt-get install verilog
+$ sudo apt-get install gtkwave
+$ git cloen https://github.com/staceycampbell/ldiv.git
+$ cd ldiv
+$ make
+$ gtkwave idiv.vcd
