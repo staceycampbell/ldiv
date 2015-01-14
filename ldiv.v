@@ -23,7 +23,7 @@ module ldiv #
    reg [NUMERATOR_WIDTH - 1:0] 	    remainder [LATENCY - 1:0];
    reg 				    valid [LATENCY - 1:0];
 
-   wire [LATENCY - 1:0] 	    r_next [LATENCY - 1:0];
+   wire [LATENCY - 1:0] 	    remainder_next [LATENCY - 1:0];
 
    assign quotient_out = quotient[LATENCY - 1];
    assign remainder_out = remainder[LATENCY - 1];
@@ -34,7 +34,7 @@ module ldiv #
    generate
       for (i = 0; i < LATENCY; i = i + 1)
 	begin
-	   assign r_next[i] = i > 0 ? (remainder[i - 1] << 1) | numerator[i - 1][LATENCY - i - 1] : 0;
+	   assign remainder_next[i] = i > 0 ? (remainder[i - 1] << 1) | numerator[i - 1][LATENCY - i - 1] : 0;
 
 	   always @(posedge clk or negedge resetb)
 	     if (~resetb)
@@ -56,14 +56,14 @@ module ldiv #
 		 end
 	       else
 		 begin
-		    if (r_next[i] >= denominator[i - 1])
+		    if (remainder_next[i] >= denominator[i - 1])
 		      begin
-			 remainder[i] <= r_next[i] - denominator[i - 1];
+			 remainder[i] <= remainder_next[i] - denominator[i - 1];
 			 quotient[i] <= quotient[i - 1] | (1 << LATENCY - i - 1);
 		      end
 		    else
 		      begin
-			 remainder[i] <= r_next[i];
+			 remainder[i] <= remainder_next[i];
 			 quotient[i] <= quotient[i - 1];
 		      end
 		    denominator[i] <= denominator[i - 1];
@@ -75,23 +75,28 @@ module ldiv #
 
    always @(posedge clk)
      if (valid[LATENCY - 1])
-       $display("%d / %d = %d, %d %% %d = %d", numerator[LATENCY - 1], denominator[LATENCY - 1], quotient[LATENCY - 1],
-		numerator[LATENCY - 1], denominator[LATENCY - 1], remainder[LATENCY - 1]);
+       $display("%d / %d = %d, %d %% %d = %d: %s", numerator[LATENCY - 1], denominator[LATENCY - 1], quotient[LATENCY - 1],
+		numerator[LATENCY - 1], denominator[LATENCY - 1], remainder[LATENCY - 1],
+		numerator[LATENCY - 1] / denominator[LATENCY - 1] == quotient[LATENCY - 1] &&
+		numerator[LATENCY - 1] % denominator[LATENCY - 1] == remainder[LATENCY - 1] ? "PASS" : "FAIL");
 
 endmodule
 
 module main ();
 
-   localparam NUMERATOR_WIDTH = 4;
-   localparam DENOMINATOR_WIDTH = 3;
-   localparam QUOTIENT_WIDTH = 4;
+   localparam NUMERATOR_WIDTH = 23;
+   localparam DENOMINATOR_WIDTH = 15;
+   localparam QUOTIENT_WIDTH = NUMERATOR_WIDTH;
 
-   reg [15:0] t;
-   reg 	      go;
-   reg 	      clk;
-   reg [NUMERATOR_WIDTH - 1:0] numerator;
-   reg [DENOMINATOR_WIDTH - 1:0] denominator;
    reg 				 valid_in;
+   reg [15:0] 			 t;
+   reg 				 go;
+   reg 				 clk;
+   reg [NUMERATOR_WIDTH - 1:0] 	 rnd_num; 	      
+   reg [DENOMINATOR_WIDTH - 1:0] rnd_dem;
+   reg [NUMERATOR_WIDTH - 1:0] 	 numerator;
+   reg [DENOMINATOR_WIDTH - 1:0] denominator;
+   
    wire [QUOTIENT_WIDTH - 1:0] 	 quotient;
    wire [NUMERATOR_WIDTH - 1:0]  remainder;
    wire 			 valid_out;
@@ -120,13 +125,19 @@ module main ();
 	$dumpfile("ldiv.vcd");
 	$dumpvars(0, main);
 	clk = 0;
-	for (t = 0 ; t < 200;  t = t + 1)
+	for (t = 0 ; t < 1000;  t = t + 1)
 	  begin
 	     #1 clk = 1;
 	     #1 clk = 0;
 	  end
 	$display("Done.");
 	$finish;
+     end // initial begin
+
+   always @(posedge clk)
+     begin
+	rnd_num <= $random;
+	rnd_dem <= $random;
      end
 
    always @(posedge clk)
@@ -139,25 +150,13 @@ module main ();
        end
      else
        begin
+	  numerator <= rnd_num;
+	  denominator <= rnd_dem ? rnd_dem : 3;
 	  if (go && ~valid_in)
 	    begin
 	       go <= 0;
 	       valid_in <= 1;
-	       numerator <= 0;
-	       denominator <= 1;
 	    end
-	  else
-	    if (valid_in)
-	      if (numerator == (1 << NUMERATOR_WIDTH) - 1)
-		begin
-		   numerator <= 0;
-		   if (denominator == (1 << DENOMINATOR_WIDTH) - 1)
-		     denominator <= 1;
-		   else
-		     denominator <= denominator + 1;
-		end
-	      else
-		numerator <= numerator + 1;
        end
    
 endmodule
