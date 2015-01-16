@@ -84,8 +84,8 @@ endmodule
 
 module main ();
 
-   localparam NUMERATOR_WIDTH = 23;
-   localparam DENOMINATOR_WIDTH = 15;
+   localparam NUMERATOR_WIDTH = 24;
+   localparam DENOMINATOR_WIDTH = 20;
    localparam QUOTIENT_WIDTH = NUMERATOR_WIDTH;
 
    reg 				 valid_in;
@@ -136,8 +136,8 @@ module main ();
 
    always @(posedge clk)
      begin
-	rnd_num <= $random;
-	rnd_dem <= $random;
+	rnd_num <= $random + ($random << 32);
+	rnd_dem <= $random + ($random << 32);
      end
 
    always @(posedge clk)
