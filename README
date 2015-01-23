@@ -1,10 +1,11 @@
-This is a small chunk of code to demonstrate synthesizable Verilog to
-perform continuous long division.
+This is a small chunk of sequential logic to demonstrate synthesizable Verilog to perform
+continuous division.  Latency is the number of bits allocated to the numerator plus one.  A
+"valid" signal can be latency-matched through the divider logic.
 
 https://en.wikipedia.org/wiki/Division_algorithm#Integer_division_.28unsigned.29_with_remainder
 
-The primary purpose of this code is to demonstrate (to myself!) the
-usefulness of Icarus Verilog.
+The primary purpose of this code was to demonstrate/confirm (to myself) the usefulness of
+Icarus Verilog.
 
 http://iverilog.wikia.com/wiki/Main_Page
 
@@ -16,3 +17,4 @@ $ git clone https://github.com/staceycampbell/ldiv.git
 $ cd ldiv
 $ make
 $ gtkwave ldiv.vcd
+
