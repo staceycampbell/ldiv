@@ -5,38 +5,45 @@ module ldiv #
    parameter 	QUOTIENT_WIDTH = 10 
    )
    (
-    input 			    clk,
-    input 			    resetb,
-    input [NUMERATOR_WIDTH - 1:0]   numerator_in,
-    input [DENOMINATOR_WIDTH - 1:0] denominator_in,
-    input 			    valid_in,
-    output [QUOTIENT_WIDTH - 1:0]   quotient_out,
-    output [NUMERATOR_WIDTH - 1:0]  remainder_out,
-    output 			    valid_out
+    input 				  clk,
+    input 				  resetb,
+    input signed [NUMERATOR_WIDTH - 1:0]  numerator_in,
+    input [DENOMINATOR_WIDTH - 1:0] 	  denominator_in,
+    input 				  valid_in,
+    output signed [QUOTIENT_WIDTH - 1:0]  quotient_out,
+    output signed [NUMERATOR_WIDTH - 1:0] remainder_out,
+    output 				  valid_out
     );
 
-   localparam LATENCY = NUMERATOR_WIDTH + 1;
+   localparam LATENCY = NUMERATOR_WIDTH;
 
-   reg [LATENCY - 1:0] 		    numerator [LATENCY - 1:0];
-   reg [DENOMINATOR_WIDTH - 1:0]    denominator [LATENCY - 1:0];
-   reg [QUOTIENT_WIDTH - 1:0] 	    quotient [LATENCY - 1:0];
-   reg [NUMERATOR_WIDTH - 1:0] 	    remainder [LATENCY - 1:0];
-   reg 				    valid [LATENCY - 1:0];
+   reg [LATENCY - 1:0] 			  numerator [LATENCY - 1:0];
+   reg [DENOMINATOR_WIDTH - 1:0] 	  denominator [LATENCY - 1:0];
+   reg [QUOTIENT_WIDTH - 1:0] 		  quotient [LATENCY - 1:0];
+   reg [NUMERATOR_WIDTH - 1:0] 		  remainder [LATENCY - 1:0];
+   reg 					  valid [LATENCY - 1:0];
+   reg [LATENCY - 1:0] 			  numerator_negative;
 
-   wire [LATENCY - 1:0] 	    remainder_next [LATENCY - 1:0];
+   wire [LATENCY - 1:0] 		  remainder_next [LATENCY - 1:0];
 
-   assign quotient_out = quotient[LATENCY - 1];
-   assign remainder_out = remainder[LATENCY - 1];
+   wire signed [NUMERATOR_WIDTH - 1:0] 	  numerator_out;
+   wire [DENOMINATOR_WIDTH - 1:0] 	  denominator_out;
+
+   assign quotient_out = numerator_negative ? -quotient[LATENCY - 1] : -quotient[LATENCY - 1];
+   assign remainder_out = numerator_negative ? -remainder[LATENCY - 1] : remainder[LATENCY - 1];
    assign valid_out = valid[LATENCY - 1];
 
-   genvar 			    i;
+   assign numerator_out = numerator_negative ? -numerator[LATENCY - 1] : numerator[LATENCY - 1];
+   assign denominator_out = denominator[LATENCY - 1];
+
+   genvar 				  i;
 
    generate
       for (i = 0; i < LATENCY; i = i + 1)
 	begin
 	   assign remainder_next[i] = i > 0 ? (remainder[i - 1] << 1) | numerator[i - 1][LATENCY - i - 1] : 0;
 
-	   always @(posedge clk or negedge resetb)
+	   always @(posedge clk)
 	     if (~resetb)
 	       begin
 		  quotient[i] <= 0;
@@ -51,7 +58,8 @@ module ldiv #
 		    quotient[i] <= 0;
 		    remainder[i] <= 0;
 		    denominator[i] <= denominator_in;
-		    numerator[i] <= numerator_in;
+		    numerator[i] <= numerator_in < 0 ? -numerator_in : numerator_in;
+		    numerator_negative[i] <= numerator_in < 0;
 		    valid[i] <= valid_in;
 		 end
 	       else
@@ -68,17 +76,18 @@ module ldiv #
 		      end
 		    denominator[i] <= denominator[i - 1];
 		    numerator[i] <= numerator[i - 1];
+		    numerator_negative[i] <= numerator_negative[i - 1];
 		    valid[i] <= valid[i - 1];
 		 end
 	end
    endgenerate
 
    always @(posedge clk)
-     if (valid[LATENCY - 1])
-       $display("%d / %d = %d, %d %% %d = %d: %s", numerator[LATENCY - 1], denominator[LATENCY - 1], quotient[LATENCY - 1],
-		numerator[LATENCY - 1], denominator[LATENCY - 1], remainder[LATENCY - 1],
-		numerator[LATENCY - 1] / denominator[LATENCY - 1] == quotient[LATENCY - 1] &&
-		numerator[LATENCY - 1] % denominator[LATENCY - 1] == remainder[LATENCY - 1] ? "PASS" : "FAIL");
+     if (valid_out)
+       $display("%d / %d = %d, %d %% %d = %d: %s", numerator_out, denominator_out, quotient_out,
+		numerator_out, denominator_out, remainder_out,
+		numerator_out / $signed({1'b0, denominator_out}) == quotient_out &&
+		numerator_out % $signed({1'b0, denominator_out}) == remainder_out ? "PASS" : "FAIL");
 
 endmodule
 
@@ -92,15 +101,15 @@ module main ();
    reg [15:0] 			 t;
    reg 				 go;
    reg 				 clk;
-   reg [NUMERATOR_WIDTH - 1:0] 	 rnd_num; 	      
-   reg [DENOMINATOR_WIDTH - 1:0] rnd_dem;
-   reg [NUMERATOR_WIDTH - 1:0] 	 numerator;
-   reg [DENOMINATOR_WIDTH - 1:0] denominator;
+   reg [NUMERATOR_WIDTH - 1 - 1:0] rnd_num; 	      
+   reg [DENOMINATOR_WIDTH - 1:0]   rnd_dem;
+   reg signed [NUMERATOR_WIDTH - 1:0] numerator;
+   reg [DENOMINATOR_WIDTH - 1:0]      denominator;
    
-   wire [QUOTIENT_WIDTH - 1:0] 	 quotient;
-   wire [NUMERATOR_WIDTH - 1:0]  remainder;
-   wire 			 valid_out;
-   wire 			 reset = t < 4;
+   wire signed [QUOTIENT_WIDTH - 1:0] quotient;
+   wire signed [NUMERATOR_WIDTH - 1:0] remainder;
+   wire 			       valid_out;
+   wire 			       reset = t < 4;
    
    ldiv #
      (
@@ -125,7 +134,7 @@ module main ();
 	$dumpfile("ldiv.vcd");
 	$dumpvars(0, main);
 	clk = 0;
-	for (t = 0 ; t < 1000;  t = t + 1)
+	for (t = 0 ; t < 5000;  t = t + 1)
 	  begin
 	     #1 clk = 1;
 	     #1 clk = 0;
@@ -150,7 +159,7 @@ module main ();
        end
      else
        begin
-	  numerator <= rnd_num;
+	  numerator <= ($random & 1) ? -rnd_num : rnd_num;
 	  denominator <= rnd_dem ? rnd_dem : 3;
 	  if (go && ~valid_in)
 	    begin
