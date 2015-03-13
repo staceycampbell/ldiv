@@ -17,7 +17,7 @@ module ldiv #
 
    localparam LATENCY = NUMERATOR_WIDTH;
 
-   reg [LATENCY - 1:0] 			  numerator [LATENCY - 1:0];
+   reg signed [LATENCY - 1 + 1:0] 			  numerator [LATENCY - 1:0];
    reg [DENOMINATOR_WIDTH - 1:0] 	  denominator [LATENCY - 1:0];
    reg [QUOTIENT_WIDTH - 1:0] 		  quotient [LATENCY - 1:0];
    reg [NUMERATOR_WIDTH - 1:0] 		  remainder [LATENCY - 1:0];
@@ -26,14 +26,16 @@ module ldiv #
 
    wire [LATENCY - 1:0] 		  remainder_next [LATENCY - 1:0];
 
-   wire signed [NUMERATOR_WIDTH - 1:0] 	  numerator_out;
+   wire signed [NUMERATOR_WIDTH - 1 + 1:0] 	  numerator_out;
    wire [DENOMINATOR_WIDTH - 1:0] 	  denominator_out;
 
-   assign quotient_out = numerator_negative ? -quotient[LATENCY - 1] : -quotient[LATENCY - 1];
-   assign remainder_out = numerator_negative ? -remainder[LATENCY - 1] : remainder[LATENCY - 1];
+   assign quotient_out = numerator_negative[LATENCY - 1] ? -quotient[LATENCY - 1] : quotient[LATENCY - 1];
+   assign remainder_out = numerator_negative[LATENCY - 1] ? -remainder[LATENCY - 1] : remainder[LATENCY - 1];
    assign valid_out = valid[LATENCY - 1];
 
-   assign numerator_out = numerator_negative ? -numerator[LATENCY - 1] : numerator[LATENCY - 1];
+   assign numerator_0 = numerator[0];
+
+   assign numerator_out = numerator_negative[LATENCY - 1] ? -numerator[LATENCY - 1] : numerator[LATENCY - 1];
    assign denominator_out = denominator[LATENCY - 1];
 
    genvar 				  i;
@@ -101,7 +103,7 @@ module main ();
    reg [15:0] 			 t;
    reg 				 go;
    reg 				 clk;
-   reg [NUMERATOR_WIDTH - 1 - 1:0] rnd_num; 	      
+   reg signed [NUMERATOR_WIDTH - 1:0] rnd_num; 	      
    reg [DENOMINATOR_WIDTH - 1:0]   rnd_dem;
    reg signed [NUMERATOR_WIDTH - 1:0] numerator;
    reg [DENOMINATOR_WIDTH - 1:0]      denominator;
@@ -134,7 +136,7 @@ module main ();
 	$dumpfile("ldiv.vcd");
 	$dumpvars(0, main);
 	clk = 0;
-	for (t = 0 ; t < 5000;  t = t + 1)
+	for (t = 0 ; t < 500;  t = t + 1)
 	  begin
 	     #1 clk = 1;
 	     #1 clk = 0;
@@ -159,7 +161,7 @@ module main ();
        end
      else
        begin
-	  numerator <= ($random & 1) ? -rnd_num : rnd_num;
+	  numerator <= rnd_num;
 	  denominator <= rnd_dem ? rnd_dem : 3;
 	  if (go && ~valid_in)
 	    begin
