@@ -97,9 +97,9 @@ endmodule
 
 module main ();
 
-   localparam TB_TICKS = 500;
+   localparam TB_TICKS = 1000;
    localparam NUMERATOR_WIDTH = 24;
-   localparam DENOMINATOR_WIDTH = 24;
+   localparam DENOMINATOR_WIDTH = 21;
    localparam QUOTIENT_WIDTH = NUMERATOR_WIDTH;
 
    reg 				 valid_in;
@@ -156,7 +156,7 @@ module main ();
    always @(posedge clk)
      begin
 	rnd_num <= $random + ($random << 32);
-	rnd_dem <= $random + ($random << 32);
+	rnd_dem <= $random & 1 ? $random + ($random << 32) : $random >>> 24;
      end
 
    always @(posedge clk)
