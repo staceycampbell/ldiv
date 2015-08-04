@@ -97,7 +97,7 @@ endmodule
 
 module main ();
 
-   localparam TB_TICKS = 1000;
+   localparam TB_TICKS = 2000;
    localparam NUMERATOR_WIDTH = 24;
    localparam DENOMINATOR_WIDTH = 21;
    localparam QUOTIENT_WIDTH = NUMERATOR_WIDTH;
@@ -115,7 +115,7 @@ module main ();
    wire signed [NUMERATOR_WIDTH - 1:0] remainder;
    wire 			       valid_out;
    wire 			       reset = t < 4;
-   
+
    ldiv #
      (
       .NUMERATOR_WIDTH(NUMERATOR_WIDTH),
@@ -136,19 +136,11 @@ module main ();
 
    initial
      begin
-	if (TB_TICKS <= 5000) // keep wavefile data under control
-	  begin
-	     $dumpfile("ldiv.vcd");
-	     $dumpvars(0, main);
-	  end
-	else
-	  $display("Too much data for wavefile. Not creating.");
+	$dumpfile("ldiv.vcd");
+	$dumpvars(0, main);
 	clk = 0;
 	for (t = 0 ; t < TB_TICKS;  t = t + 1)
-	  begin
-	     #1 clk = 1;
-	     #1 clk = 0;
-	  end
+	     #1 clk = ~clk;
 	$display("Done.");
 	$finish;
      end // initial begin
