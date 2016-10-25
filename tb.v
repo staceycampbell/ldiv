@@ -6,7 +6,7 @@ module tb ();
    localparam QUOTIENT_WIDTH = NUMERATOR_WIDTH;
 
    reg 				 valid_in;
-   reg [15:0] 			 t;
+   reg [15:0] 			 t = 0;
    reg 				 go;
    reg 				 clk;
    reg signed [NUMERATOR_WIDTH - 1:0] rnd_num; 	      
@@ -20,7 +20,7 @@ module tb ();
    wire signed [NUMERATOR_WIDTH - 1 + 1:0] numerator_out;
    wire [DENOMINATOR_WIDTH - 1:0] 	   denominator_out;
    
-   wire 				   pass = numerator_out / $signed({1'b0, denominator_out}) == quotient_out && numerator_out % $signed({1'b0, denominator_out}) == remainder_out;
+   wire 				   pass = valid_out ? numerator_out / $signed({1'b0, denominator_out}) == quotient_out && numerator_out % $signed({1'b0, denominator_out}) == remainder_out : 0;
    wire 				   reset = t < 4;
 
    integer 				   idx;
