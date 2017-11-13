@@ -12,12 +12,12 @@ http://iverilog.wikia.com/wiki/Main_Page
 
 This demo will run just fine on a Raspberry Pi/raspbian platform.  E.g.
 
-$ sudo apt-get install verilog
-$ sudo apt-get install gtkwave
-$ git clone https://github.com/staceycampbell/ldiv.git
-$ cd ldiv
-$ make
-$ gtkwave ldiv.vcd
+sudo apt-get install verilog
+sudo apt-get install gtkwave
+git clone https://github.com/staceycampbell/ldiv.git
+cd ldiv
+make
+gtkwave ldiv.vcd
 
 Stacey Campbell
 staceycampbell@yahoo.com
