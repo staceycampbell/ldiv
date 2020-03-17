@@ -43,42 +43,32 @@ module ldiv #
 	   assign remainder_next[i] = i > 0 ? (remainder[i - 1] << 1) | numerator[i - 1][LATENCY - i - 1] : 0;
 
 	   always @(posedge clk)
-	     if (reset)
+	     if (i == 0)
 	       begin
 		  quotient[i] <= 0;
 		  remainder[i] <= 0;
-		  denominator[i] <= 0;
-		  numerator[i] <= 0;
-		  numerator_negative[i] <= 0;
-		  valid[i] <= 0;
+		  denominator[i] <= denominator_in;
+		  numerator[i] <= numerator_in < 0 ? -numerator_in : numerator_in;
+		  numerator_negative[i] <= numerator_in < 0;
+		  valid[i] <= valid_in;
 	       end
 	     else
-	       if (i == 0)
-		 begin
-		    quotient[i] <= 0;
-		    remainder[i] <= 0;
-		    denominator[i] <= denominator_in;
-		    numerator[i] <= numerator_in < 0 ? -numerator_in : numerator_in;
-		    numerator_negative[i] <= numerator_in < 0;
-		    valid[i] <= valid_in;
-		 end
-	       else
-		 begin
-		    if (remainder_next[i] >= denominator[i - 1])
-		      begin
-			 remainder[i] <= remainder_next[i] - denominator[i - 1];
-			 quotient[i] <= quotient[i - 1] | (1 << LATENCY - i - 1);
-		      end
-		    else
-		      begin
-			 remainder[i] <= remainder_next[i];
-			 quotient[i] <= quotient[i - 1];
-		      end
-		    denominator[i] <= denominator[i - 1];
-		    numerator[i] <= numerator[i - 1];
-		    numerator_negative[i] <= numerator_negative[i - 1];
-		    valid[i] <= valid[i - 1];
-		 end
+	       begin
+		  if (remainder_next[i] >= denominator[i - 1])
+		    begin
+		       remainder[i] <= remainder_next[i] - denominator[i - 1];
+		       quotient[i] <= quotient[i - 1] | (1 << LATENCY - i - 1);
+		    end
+		  else
+		    begin
+		       remainder[i] <= remainder_next[i];
+		       quotient[i] <= quotient[i - 1];
+		    end
+		  denominator[i] <= denominator[i - 1];
+		  numerator[i] <= numerator[i - 1];
+		  numerator_negative[i] <= numerator_negative[i - 1];
+		  valid[i] <= valid[i - 1];
+	       end
 	end
    endgenerate
 
